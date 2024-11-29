@@ -1,4 +1,3 @@
-use regex::Regex;
 use std::collections::HashMap;
 use std::fs;
 
@@ -10,35 +9,32 @@ enum Color {
 }
 
 fn solve_challenge(input: String) -> i32 {
-    let game_regex = Regex::new(r"(?m)^Game (\d+): (.+)$").unwrap();
+    input
+        .lines()
+        .map(|line| {
+            let game_contents = line.split_once(": ").unwrap().1;
+            let mut bag: HashMap<Color, i32> = HashMap::new();
 
-    game_regex.captures_iter(input.as_str()).map(|game_capture| {
-        let (_, [game_number, game_contents]) = game_capture.extract();
-        let mut bag: HashMap<Color, i32> = HashMap::new();
+            game_contents.split(";").for_each(|game_contents| {
+                game_contents.split(",").for_each(|bag_item| {
+                    let split_item: Vec<&str> = bag_item.trim().split(" ").collect();
+                    let count = split_item[0].parse::<i32>().unwrap();
+                    let color = match split_item[1] {
+                        "red" => Color::Red,
+                        "green" => Color::Green,
+                        "blue" => Color::Blue,
+                        _ => panic!("Invalid color"),
+                    };
 
-        game_contents.split_terminator("; ").for_each(|game_contents| {
-            game_contents.split_terminator(", ").for_each(|bag_item| {
-                let split_item: Vec<&str> = bag_item.split_terminator(" ").collect();
-                let count = split_item[0].parse::<i32>().unwrap_or(0);
-                let color = match split_item[1] {
-                    "red" => Color::Red,
-                    "green" => Color::Green,
-                    "blue" => Color::Blue,
-                    _ => panic!("Invalid color"),
-                };
-
-                bag.entry(color).and_modify(|bag_count| {
-                    if *bag_count < count {
-                        *bag_count = count;
-                    }
-                }).or_insert(count);
+                    bag.entry(color)
+                        .and_modify(|bag_count| *bag_count = (*bag_count).max(count))
+                        .or_insert(count);
+                });
             });
-        });
 
-        println!("{:?}", bag);
-
-        bag.values().product::<i32>()
-    }).sum()
+            bag.values().product::<i32>()
+        })
+        .sum()
 }
 
 fn main() {
