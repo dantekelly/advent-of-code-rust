@@ -1,30 +1,24 @@
 use std::fs;
 
 fn solve_challenge(input: String) -> i32 {
-    let mut first_col: Vec<i32> = vec![];
-    let mut second_col: Vec<i32> = vec![];
+    let (mut col1, mut col2): (Vec<i32>, Vec<i32>) = input
+        .lines()
+        .map(|line| {
+            let mut cols = line
+                .split_whitespace()
+                .map(|n| n.to_string().parse::<i32>().unwrap());
 
-    input.lines().for_each(|line| {
-        let cols: Vec<&str> = line.split_whitespace().collect();
+            (cols.next().unwrap(), cols.next().unwrap())
+        })
+        .unzip();
 
-        first_col.push(cols[0].to_string().parse::<i32>().unwrap());
-        second_col.push(cols[1].to_string().parse::<i32>().unwrap());
-    });
+    col1.sort();
+    col2.sort();
 
-    first_col.sort();
-    second_col.sort();
-
-    let mut index = 0;
-    let mut solution = 0;
-    while index < first_col.len() {
-        let first_item = first_col[index];
-        let second_item = second_col[index];
-
-        solution += first_item.max(second_item) - first_item.min(second_item);
-        index += 1;
-    }
-
-    return solution;
+    col1.iter()
+        .zip(col2.iter())
+        .map(|(a, b)| a.max(b) - a.min(b))
+        .sum()
 }
 
 fn main() {
