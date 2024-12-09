@@ -1,7 +1,7 @@
 use std::{fs, ops::Range};
 
-fn parse_mul(line: &str, start: usize) -> Option<u32> {
-    let mut chars = line[start..].chars();
+fn parse_mul(input: &str, start: usize) -> Option<u32> {
+    let mut chars = input[start..].chars();
     let mut first_number = String::new();
     let mut second_number = String::new();
 
@@ -49,16 +49,8 @@ fn solve_challenge(input: &str) -> u32 {
 
     input
         .match_indices("mul(")
-        .filter_map(|(start, _)| {
-            if unavailable_ranges
-                .iter()
-                .any(|range| range.contains(&start))
-            {
-                None
-            } else {
-                parse_mul(input, start)
-            }
-        })
+        .filter(|(start, _)| !unavailable_ranges.iter().any(|range| range.contains(start)))
+        .filter_map(|(start, _)| parse_mul(input, start))
         .sum()
 }
 
@@ -77,5 +69,14 @@ mod tests {
         let input = "xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))";
 
         assert_eq!(solve_challenge(input), 48)
+    }
+
+    #[test]
+    fn test_parse_mul() {
+        assert_eq!(parse_mul("mul(2,4)", 0), Some(8));
+        assert_eq!(parse_mul("mul(2,4)", 1), None);
+        assert_eq!(parse_mul("mul[3,7]", 0), None);
+        assert_eq!(parse_mul("mul(3,7]", 0), None);
+        assert_eq!(parse_mul("mul(3,7)", 0), Some(21));
     }
 }
