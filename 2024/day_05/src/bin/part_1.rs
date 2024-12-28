@@ -2,62 +2,52 @@ use std::collections::HashSet;
 use std::fs;
 
 fn solve_challenge(input: &str) -> u32 {
-    let lines: Vec<&str> = input.split("\n\n").collect();
+    let (ordering_rule_lines, page_lines) = input.split_once("\n\n").unwrap();
 
-    let ordering_rules: Vec<(u32, u32)> = lines[0].lines().map(|line| {
-        let (a, b) = line.split_once("|").unwrap();
-        (a.parse().unwrap(), b.parse().unwrap())
-    }).collect();
+    let ordering_rules: Vec<(u32, u32)> = ordering_rule_lines
+        .lines()
+        .map(|line| {
+            let (a, b) = line
+                .split_once("|")
+                .unwrap();
+
+            (a.parse().unwrap(), b.parse().unwrap())
+        })
+        .collect();
     let ordering_rules_set: HashSet<u32> = ordering_rules.iter().flat_map(|(a, b)| [*a, *b]).collect();
 
-    lines[1]
+    page_lines
         .lines()
         .map(|line| {
             let pages: Vec<u32> = line.split(",").map(|page| page.parse().unwrap()).collect();
 
-            let is_valid = pages
+            match pages
                 .iter()
                 .all(|page| {
                     if ordering_rules_set.contains(page) {
-                        // Multiple rules can be found for a page, so we need to check them all
-                        let rules: Vec<(u32, u32)> = ordering_rules.iter().filter(|(a, b)| *a == *page || *b == *page).cloned().collect();
+                        return ordering_rules
+                            .iter()
+                            .filter(|(a, b)| *a == *page || *b == *page)
+                            .all(|(rule_a, rule_b)| {
+                                let rule_a_index = pages.iter().position(|position| position == rule_a);
+                                let rule_b_index = pages.iter().position(|position| position == rule_b);
 
-                        return rules.iter().all(|(rule_a, rule_b)| {
-                            let rule_a_index = pages.iter().position(|position| position == rule_a);
-                            let rule_b_index = pages.iter().position(|position| position == rule_b);
-
-                            match (rule_a_index, rule_b_index) {
-                                (Some(rule_a_index), Some(rule_b_index)) => {
-                                    if rule_a_index < rule_b_index {
+                                match (rule_a_index, rule_b_index) {
+                                    (Some(rule_a_index), Some(rule_b_index)) => {
+                                        rule_a_index < rule_b_index
+                                    }
+                                    _ => {
                                         true
-                                    } else {
-                                        false
                                     }
                                 }
-                                (None, Some(_)) => {
-                                    true
-                                }
-                                (Some(_), None) => {
-                                    true
-                                }
-                                (None, None) => {
-                                    true
-                                }
-                            }
-                        });
+                            });
                     }
 
                     true
-                });
-
-            if is_valid {
-                let middle_index = (pages.len() as f32 / 2.0).floor() as usize;
-                // Collect and return middle number
-                let middle_number = pages[middle_index];
-                return middle_number;
-            }
-
-            0
+                }) {
+                    true => pages[(pages.len() as f32 / 2.0).floor() as usize],
+                    false => 0
+                }
         })
         .sum()
 
